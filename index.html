@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Solar PV System Analysis</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      .chart-container {
+        margin: 2rem 0;
+      }
+      .results-card {
+        margin-top: 2rem;
+      }
+      #fileUpload {
+        display: none;
+      }
+      .upload-btn {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container py-4">
+      <!-- JSON Import Section -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Import Solar Installation Data</h5>
+          <div class="mb-3">
+            <label class="upload-btn btn btn-outline-primary" for="fileUpload">
+              Choose JSON File
+            </label>
+            <input
+              type="file"
+              id="fileUpload"
+              accept=".json"
+              onchange="handleFileUpload(this)"
+            />
+            <span id="fileName" class="ms-2"></span>
+          </div>
+          <div id="importSummary" class="mt-3"></div>
+        </div>
+      </div>
+
+      <!-- Import Load Profile Section -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Import Load Profile</h5>
+          <div class="mb-3">
+            <label
+              class="upload-btn btn btn-outline-primary"
+              for="loadProfileUpload"
+            >
+              Choose Load Profile (JSON)
+            </label>
+            <input
+              type="file"
+              id="loadProfileUpload"
+              accept=".json"
+              onchange="handleLoadProfileUpload(this)"
+              style="display: none"
+            />
+            <span id="loadFileName" class="ms-2"></span>
+          </div>
+          <div id="loadImportSummary" class="mt-3"></div>
+        </div>
+      </div>
+
+      <!-- Simulation Parameters -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">System Parameters</h5>
+          <form id="solarForm" class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Latitude</label>
+              <input
+                type="number"
+                class="form-control"
+                id="latitude"
+                step="0.0001"
+                readonly
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Longitude</label>
+              <input
+                type="number"
+                class="form-control"
+                id="longitude"
+                step="0.0001"
+                readonly
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Date</label>
+              <input
+                type="date"
+                class="form-control"
+                id="date"
+                value="2024-01-01"
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Total Rated Power (kWp)</label>
+              <input
+                type="number"
+                class="form-control"
+                id="ratedPower"
+                readonly
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Battery Capacity (kWh)</label>
+              <input
+                type="number"
+                class="form-control battery-input"
+                id="batteryCapacity"
+                value="30"
+                step="0.1"
+                disabled
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Battery Charge Rate (C-rate)</label>
+              <input
+                type="number"
+                class="form-control battery-input"
+                id="chargeRate"
+                value="0.5"
+                step="0.1"
+                min="0.1"
+                max="1.0"
+                disabled
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-check">Battery starts with (%)</label>
+              <div class="input-group mt-2">
+                <input
+                  type="number"
+                  class="form-control battery-input"
+                  id="initialBatteryPercent"
+                  value="70"
+                  step="1"
+                  min="0"
+                  max="100"
+                  disabled
+                />
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Min Battery Level (%)</label>
+              <div class="input-group">
+                <input
+                  type="number"
+                  class="form-control battery-input"
+                  id="minBatteryLevel"
+                  value="20"
+                  min="10"
+                  max="40"
+                  step="5"
+                  disabled
+                />
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <div class="form-check mt-4">
+                <input
+                  type="checkbox"
+                  class="form-check-input battery-input"
+                  id="useInitialBattery"
+                  onchange="toggleBatteryInput()"
+                  disabled
+                />
+                <label class="form-check-label">Initial Battery Charge</label>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <div class="form-check mt-4">
+                <input
+                  type="checkbox"
+                  class="form-check-input battery-input"
+                  id="allowGridCharge"
+                  disabled
+                />
+                <label class="form-check-label">Allow Grid Charging</label>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <div class="form-check mt-4">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  id="hasBattery"
+                  onchange="toggleBatteryInputs(this.checked)"
+                />
+                <label class="form-check-label">Include Battery Storage</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check mt-4">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  id="gridConnected"
+                  checked
+                />
+                <label class="form-check-label">Grid Connected (On-grid)</label>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <button
+                type="button"
+                class="btn btn-primary"
+                onclick="startSimulation()"
+              >
+                Run Simulation
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Charts and Results -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Power Flow Analysis</h5>
+              <canvas id="powerChart"></canvas>
+            </div>
+          </div>
+          <div class="card mt-4">
+            <div class="card-body">
+              <h5 class="card-title">Battery State of Charge</h5>
+              <canvas id="batteryChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Battery State of Charge</h5>
+              <canvas id="batterySoCChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Battery Charge/Discharge Rate</h5>
+              <canvas id="batteryRateChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">System Performance</h5>
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <tbody>
+                    <tr>
+                      <th>Total PV Energy</th>
+                      <td id="totalEnergy">-- kWh</td>
+                    </tr>
+                    <tr>
+                      <th>Battery Status</th>
+                      <td id="batteryStatus">-- kWh</td>
+                    </tr>
+                    <tr>
+                      <th>Grid Import</th>
+                      <td id="gridImportStatus">-- kWh</td>
+                    </tr>
+                    <tr>
+                      <th>Grid Export</th>
+                      <td id="gridExportStatus">-- kWh</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <!-- เพิ่มส่วนนี้ -->
+              <div id="gridStatus" class="mt-3"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Installation Summary</h5>
+              <div id="systemSummary"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Area Details</h5>
+                <div id="areaDetails"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
