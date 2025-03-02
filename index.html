@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -210,6 +211,33 @@
                 <label class="form-check-label">Include Battery Storage</label>
               </div>
             </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Peak Rate Threshold (฿/kWh)</label>
+              <input
+                type="number"
+                class="form-control battery-input"
+                id="peakRateThreshold"
+                value="4.0"
+                step="0.1"
+                min="0"
+                disabled
+              />
+            </div>
+            <div class="col-md-4">
+              <div class="form-check mt-4">
+                <input
+                  type="checkbox"
+                  class="form-check-input battery-input"
+                  id="optimizeForTOU"
+                  disabled
+                />
+                <label class="form-check-label"
+                  >Optimize for Time-of-Use Rates</label
+                >
+              </div>
+            </div>
+
             <div class="col-md-3">
               <div class="form-check mt-4">
                 <input
@@ -218,7 +246,20 @@
                   id="gridConnected"
                   checked
                 />
-                <label class="form-check-label">Grid Connected (On-grid)</label>
+                <label class="form-check-label"
+                  >Connect to Grid (allows import/export)</label
+                >
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check mt-4">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  id="allowExport"
+                  checked
+                />
+                <label class="form-check-label">Allow Export to Grid</label>
               </div>
             </div>
 
